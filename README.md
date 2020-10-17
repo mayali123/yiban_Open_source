@@ -8,7 +8,7 @@
 ,还有要在test.xls 文件中添加一些信息。  
 
 还有那个账户和密码
-![账户和密码查看的地方](https://github.com/mayali123/yiban_Open_source/blob/main/img-storage/ME%5D6OY5~%25UO83K%40%7D3R3YLFI.png)
+![账户和密码查看的地方](https://github.com/mayali123/yiban_Open_source/blob/main/img-storage/1.png)
 # 不足的地方    
 本代码仅仅实现了 运行后 打卡    
 
