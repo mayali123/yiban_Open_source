@@ -8,6 +8,7 @@ import json         # json库
 import xlrd         # 读取 表格 文件 用到
 import time         # 时间库
 import re           # 正则表达式库
+import hashlib      # md5
 # 登入的 网页
 login_url = 'http://xggl.hnie.edu.cn/website/login'
 # 获取上一次打卡data的网站
@@ -20,13 +21,24 @@ headers = {
     'Content-Type': "application/x-www-form-urlencoded; charset=UTF-8",
     'Connection': "keep-alive",
     'Referer': "http://xggl.hnie.edu.cn/index",
-    "user-agent": "Mozilla / 5.0(Windows NT 10.0;Win64;x64) AppleWebKit / 537.36(KHTML, like Gecko) "+\
-    "Chrome / 85.0.4183.121 Safari / 537.36 Edg / 85.0.564.68"
+    "user-agent":"Mozilla / 5.0(Linux;Android 4.0.4;Galaxy Nexus Build / IMM76B) AppleWebKit / 535.19(KHTML, like Gecko)"+\
+    "Chrome / 18.0.1025.133 Mobile Safari / 535.19"
     }
+
+# 用于转成学校需要的md5码
+def getPW(pwd):
+    encode_pwd = hashlib.md5(bytes(pwd, encoding='utf-8')).hexdigest()
+    if len(encode_pwd) > 5:
+        encode_pwd = encode_pwd[0:5] + "a" + encode_pwd[5:]
+
+    if len(encode_pwd) > 10:
+        encode_pwd = encode_pwd[0:10] + "b" + encode_pwd[10:]
+    encode_pwd = encode_pwd[:len(encode_pwd)-2]
+    return encode_pwd
 
 # 这个函数 用于读取保存在本地的 用户信息
 def read_data():
-    # 打开保存信息的文件  这个需要 一个 test.xls 文件在 和此py文件在同一个目录下
+    # 打开保存信息的文件
     workbook = xlrd.open_workbook('test.xls')
     # 打开 sheet1
     sheet1 = workbook.sheet_by_index(0)
@@ -41,7 +53,7 @@ def read_data():
     # 读取 文件 并 将对应数据 添加到 ID password mail
     for i in range(row - 1):
         ID.append(sheet1.cell_value(i + 1, 0))
-        password.append(sheet1.cell_value(i + 1, 1))
+        password.append(getPW(sheet1.cell_value(i + 1, 1)))
         mail.append(sheet1.cell_value(i + 1, 2))
     return ID, password, mail  # 返回 ID password mail
 
@@ -87,18 +99,18 @@ def main():
     ID, password, mailID = read_data()
     for i in range(len(ID)):
         data = {    # 这个data 用来访问 登入网页  要用到的
-            'username': ID[i],
-            'password': password[i]
+            'uname': ID[i],
+            'pd_mm': password[i]
         }
-
         req = requests.session()
         # 向 登入网页 发起post 请求
         recv = req.post(login_url, headers=headers, data=data).text
         # 将 str 转为 json 类型 json也就是字典
         recv = json.loads(recv)
 
-        # 向  有上一次打卡data 的网站 发起get 请求
+        # 向 有上一次打卡data 的网站 发起get 请求
         last_data = req.get(url=last_data_url, headers=headers).text
+        print(last_data)
         # 转为字典
         dic = json.loads(last_data)
         # 最后打卡要用到的 数据
@@ -111,24 +123,35 @@ def main():
         'jzdDz': dic['jzdDz'],
         'jzdDz2': dic['jzdDz2'],
         'lxdh': dic['lxdh'],
-        'grInd': dic['grInd'],
-        'jcInd': dic['jcInd'],
-        'jtqk.dm': dic['jtqk']['dm'],
-        'jtqkXx':dic['jtqkXx'],
-        'brqk.dm': dic['brqk']['dm'],
-        'qwhbInd': dic['qwhbInd'],
-        'qwhbXx': dic['qwhbXx'],
-        'jchbrInd': dic['jchbrInd'],
-        'jchbrXx': dic['jchbrXx'],
-        'lxjlInd': dic['lxjlInd'],
-        'lxjlXx': dic['lxjlXx'],
         'tw': dic['tw'],
         'bz': dic['bz'],
-        'dm': None
+        'dm': None,
+        'brJccry.dm':dic['brJccry']['dm'],
+        'brJccry1':dic['brJccry']['mc'],
+        'brStzk.dm':dic['brStzk']['dm'],
+        'brStzk1':dic['brStzk']['mc'],
+        'dkd':dic['dkd'],
+        'dkdz':dic['dkdz'],
+        'dkly':dic['dkly'],
+        'hsjc':dic['hsjc'],
+        'jkm':dic['jkm'],
+        'jrJccry.dm':dic['jrJccry']['dm'],
+        'jrJccry1':dic['jrJccry']['mc'],
+        'jrStzk1':dic['jrStzk']['mc'],
+        'jrStzk.dm': dic['jrStzk']['dm'],
+        'jzInd':dic['jzInd'],
+        'tw1':dic['twM']['mc'],
+        'twM.dm': dic['twM']['dm'],
+        'xcm':dic['xcm'],
+        'xgym':dic['xgym'],
+        'yczk.dm':dic['yczk']['dm'],
+        'yczk1': dic['yczk']['mc']
         }
-        # 处理登入网页返回的数据   可以拿到一个 content/main/welcome?_t_s_=1602909162721
-        # _t_s_=1602909162721个是 我们需要的
-        add_url_data = recv['goto2'].replace('content/main/welcome', '')
+
+        # 处理登入网页返回的数据   可以拿到一个 wap/main/welcome?_t_s_=1602909162783
+        # _t_s_=1602909162783这个是 我们需要的
+        add_url_data = recv['goto2'].replace('wap/main/welcome', '')
+        print(add_url_data)
         # 提交打卡信息要用到的 请求头
         headers1 = {
             'Accept': '*/*',
@@ -136,7 +159,8 @@ def main():
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
             'Connection': 'keep-alive',
             'Host': 'xggl.hnie.edu.cn',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36 Edg/86.0.622.38',
+            "user-agent": "Mozilla / 5.0(Linux;Android 4.0.4;Galaxy Nexus Build / IMM76B) AppleWebKit / 535.19(KHTML, like Gecko)" + \
+                          "Chrome / 18.0.1025.133 Mobile Safari / 535.19",
             'Referer': 'http://xggl.hnie.edu.cn/content/menu/student/temp/zzdk' + add_url_data,
             'Origin': 'http://xggl.hnie.edu.cn',
         }
@@ -146,6 +170,7 @@ def main():
         clock_over_data = req.post(url=clock_url, headers=headers1, data=data).text
         # 将打卡后的信息 转为 json类型
         clock_over_data1 = json.loads(clock_over_data)
+        print(clock_over_data1)
         # 这个text 是用来保存 发邮件的信息的
         text = ''
         # 获取当前时间
