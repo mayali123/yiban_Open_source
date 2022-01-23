@@ -47,3 +47,5 @@
 
 * 填写test.xls文件（**注意**：*username填写学号、password填写身份证后六位、mailID填写邮箱地址*）
 
+# 定时打卡
+* 使用服务器，在*Linux*操作系统中，使用*crontab*命令定时执行。
